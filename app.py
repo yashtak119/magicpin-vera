@@ -1872,23 +1872,11 @@ class Handler(BaseHTTPRequestHandler):
                     "submitted_at": now_iso(),
                 },
             )
-
-               else:
-
-            if self.path == "/":
-                self.send_json(
-                    200,
-                    {
-                        "status": "ok",
-                        "service": "magicpin-vera",
-                        "message": "Vera bot is running"
-                    },
-                )
-            else:
-                self.send_json(
-                    404,
-                    {"error": "not_found"},
-                )
+        else:
+            self.send_json(
+                404,
+                {"error": "not_found"},
+            )
 
     def do_POST(self):
 
