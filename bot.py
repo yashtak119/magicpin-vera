@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# vera-bot v2
 """Vera+ — magicpin AI Challenge bot, single file.
 
     python bot.py serve [--port 8080]   run the HTTP bot (/v1/context, /v1/tick, /v1/reply, /v1/healthz, /v1/metadata, /v1/teardown)
