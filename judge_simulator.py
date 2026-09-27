@@ -36,7 +36,7 @@ LLM_MODEL = "llama3.2:3b"  # <-- Local Ollama model
 OLLAMA_URL = "http://localhost:11434"
 
 # Which test to run by default
-TEST_SCENARIO = "all"
+TEST_SCENARIO = "phase2_short"
 
 # =============================================================================
 # ██████  END OF CONFIGURATION - DON'T EDIT BELOW THIS LINE ██████
