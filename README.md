@@ -1,5 +1,5 @@
 # Vera — Merchant Messaging Bot
-### magicpin AI Challenge Submission — Team: Kaustabhi
+### magicpin AI Challenge Submission — Team: Yash
 
 ---
 
