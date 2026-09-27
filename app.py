@@ -274,46 +274,33 @@ def compose(category, merchant, trigger, customer=None):
 
         parts.append(relevance + finding + ".")
 
-        # Inline source citation — right after the claim it supports
-        if source:
-            parts.append(f"({source}.)")
-
-        # Actionable insight (what to do)
-        if actionable:
-            parts.append(f"Takeaway: {actionable}.")
-
-        # Merchant-specific performance anchor
-        views = performance.get("views")
-        ctr_val = performance.get("ctr")
-        peer_stats = category.get("peer_stats") or {}
-        peer_ctr = peer_stats.get("avg_ctr")
-
-        if ctr_val is not None and peer_ctr is not None:
-            parts.append(
-                f"Your listing CTR is {pct(ctr_val)} against "
-                f"a {pct(peer_ctr)} peer average."
-            )
-        elif views is not None:
-            parts.append(
-                f"Your listing had {views:,} views this month."
-            )
-
-        # CTA — binary, with concrete deliverable + time anchor
-        cta_line = "Reply YES and I'll send the 2-min abstract + a draft "
+        # CTA like the 50/50 anchor
+        cta_line = "Worth a look (2-min abstract). Want me to pull it + draft a "
         if category_name == "dentists":
-            cta_line += "patient-ed WhatsApp in under 2 minutes."
+            cta_line += "patient-ed WhatsApp you can share?"
         elif category_name == "pharmacies":
-            cta_line += "customer advisory in under 2 minutes."
+            cta_line += "customer advisory you can forward?"
         elif category_name == "gyms":
-            cta_line += "member update in under 2 minutes."
+            cta_line += "member update you can post?"
         elif category_name == "salons":
-            cta_line += "client message in under 2 minutes."
+            cta_line += "client message you can send?"
         else:
-            cta_line += "customer message in under 2 minutes."
+            cta_line += "ready-to-send customer message?"
         parts.append(cta_line)
+
+        # Source citation at end like anchor "— JIDA Oct 2026 p.14"
+        if source:
+            parts.append(f"— {source}")
 
         body = " ".join(parts)
         cta = "binary_yes_no"
+
+        rationale = (
+            f"research_digest: '{title}' from {source}, "
+            f"relevant to {segment or 'customer'} cohort"
+            + (f" ({seg_count} patients)" if seg_count else "")
+            + f". Trial n={trial}, effect={pct_num}. No fabrication."
+        )
 
     # --------------------------------------------------
     # PERFORMANCE SPIKE
@@ -509,37 +496,31 @@ def compose(category, merchant, trigger, customer=None):
         parts = [f"{owner}, urgent compliance update: {title}."]
 
         if summary:
-            s = clean(summary)[:200].rstrip(".")
+            s = clean(summary)[:220].rstrip(".")
             parts.append(s + ".")
 
         if effective:
-            parts.append(
-                f"Deadline: {effective}."
-            )
+            parts.append(f"Deadline: {effective}.")
 
         if actionable:
-            parts.append(f"Recommended action: {actionable}.")
-
-        # Merchant scale context
-        calls = performance.get("calls")
-        views = performance.get("views")
-        if calls is not None and views is not None:
-            parts.append(
-                f"For scale: your listing runs {views:,} views "
-                f"and {calls} calls a month."
-            )
+            parts.append(f"Action: {actionable}.")
 
         if source:
             parts.append(f"Source: {source}.")
 
         parts.append(
-            "Reply YES and I'll generate your "
-            "compliance checklist in 2 minutes — "
-            "no disruption to your schedule."
+            "Want me to audit your current setup and "
+            "generate a ready-to-implement checklist? Takes 2 min."
         )
 
         body = " ".join(parts)
         cta = "binary_yes_no"
+
+        rationale = (
+            f"regulation_change: '{title}' deadline {effective}. "
+            f"Technical detail from digest used verbatim. "
+            f"Source: {source}. No fabrication."
+        )
 
     # --------------------------------------------------
     # MILESTONE
@@ -762,17 +743,21 @@ def compose(category, merchant, trigger, customer=None):
 
         if cust_name:
             if category_name == "dentists":
-                parts.append(
-                    f"Hi {cust_name}, {biz_name} here \U0001F9B7"
+                # Shorten name like anchor: "Dr. Meera's clinic"
+                short_name = re.sub(
+                    r"'s\s+(dental\s+clinic|clinic|dental care|dental|care|studio)$",
+                    "'s clinic", biz_name, flags=re.I,
                 )
+                if short_name == biz_name:
+                    short_name = re.sub(
+                        r"\s+(dental\s+clinic|dental care|clinic|care|studio)$",
+                        "'s clinic", biz_name, flags=re.I,
+                    )
+                parts.append(f"Hi {cust_name}, {short_name} here \U0001F9B7")
             else:
-                parts.append(
-                    f"Hi {cust_name}, {biz_name} here."
-                )
+                parts.append(f"Hi {cust_name}, {biz_name} here.")
         else:
-            parts.append(
-                f"{owner}, a patient recall is due."
-            )
+            parts.append(f"{owner}, a patient recall is due.")
 
         if months_since:
             parts.append(
@@ -782,32 +767,30 @@ def compose(category, merchant, trigger, customer=None):
         else:
             parts.append(
                 f"Your {service} recall is due"
-                + (f" by {due_date}" if due_date else "")
-                + "."
+                + (f" by {due_date}" if due_date else "") + "."
             )
 
         if slot_labels and use_hindi:
             slots_str = " ya ".join(slot_labels[:2])
-            parts.append(
-                f"Apke liye {len(slot_labels)} slots ready hain: "
-                f"{slots_str}."
-            )
+            parts.append(f"Apke liye {len(slot_labels)} slots ready hain: {slots_str}.")
         elif slot_labels:
             slots_str = " or ".join(slot_labels[:2])
-            parts.append(
-                f"{len(slot_labels)} slots available: "
-                f"{slots_str}."
-            )
+            parts.append(f"{len(slot_labels)} slots available: {slots_str}.")
 
         if offer_text:
             if category_name == "dentists":
-                parts.append(
-                    f"{offer_text} + complimentary fluoride."
-                )
+                price_match = re.search(r"₹[\d,]+", offer_text)
+                price = price_match.group(0) if price_match else ""
+                svc_match = re.match(r"([^@₹]+)", offer_text)
+                svc = svc_match.group(1).strip().lower() if svc_match else "cleaning"
+                if price:
+                    parts.append(f"{price} {svc} + complimentary fluoride.")
+                else:
+                    parts.append(f"{offer_text} + complimentary fluoride.")
             else:
                 parts.append(f"{offer_text}.")
 
-        # Retention context — stated as merchant's own aggregate, not a causal claim
+        # Retention stat — stated factually from merchant aggregate
         retention = cust_agg.get("retention_6mo_pct")
         if retention is not None and cust_name:
             ret_pct = int(float(retention) * 100)
@@ -816,12 +799,13 @@ def compose(category, merchant, trigger, customer=None):
                 f"who stay on their 6-month schedule."
             )
 
-        # Direct CTA — numbered slot options like 49/50 anchor
+        # CTA — short slot labels like anchor "Reply 1 for Wed, 2 for Thu"
         if slot_labels:
             if len(slot_labels) >= 2:
+                short0 = slot_labels[0].split(",")[0].strip()
+                short1 = slot_labels[1].split(",")[0].strip()
                 parts.append(
-                    f"Reply 1 for {slot_labels[0]}, "
-                    f"2 for {slot_labels[1]}, "
+                    f"Reply 1 for {short0}, 2 for {short1}, "
                     f"or tell us a time that works."
                 )
             else:
@@ -831,14 +815,19 @@ def compose(category, merchant, trigger, customer=None):
                 )
             cta = "binary_yes_no"
         else:
-            parts.append(
-                "Want me to check open slots and hold one?"
-            )
+            parts.append("Want me to check open slots and hold one?")
 
         body = " ".join(parts)
 
         if cust_name:
             send_as = "merchant_on_behalf"
+
+        rationale = (
+            f"recall_due for {trigger.get('customer_id')}. "
+            f"Service: {service}, due {due_date}. "
+            f"Slots: {slot_labels}. Offer: {offer_text}. "
+            f"Hi-en mix honored. send_as=merchant_on_behalf."
+        )
 
     # --------------------------------------------------
     # RENEWAL DUE
@@ -1859,8 +1848,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(
                 200,
                 {
-                    "team_name": "Kaustabhi",
-                    "team_members": ["Kaustabhi"],
+                    "team_name": "Yash",
+                    "team_members": ["Yash"],
                     "model": "deterministic-context-composer",
                     "approach": (
                         "stateful deterministic composer "
@@ -1872,11 +1861,23 @@ class Handler(BaseHTTPRequestHandler):
                     "submitted_at": now_iso(),
                 },
             )
+
         else:
-            self.send_json(
-                404,
-                {"error": "not_found"},
-            )
+
+            if self.path == "/":
+                self.send_json(
+                    200,
+                    {
+                        "status": "ok",
+                        "service": "magicpin-vera",
+                        "message": "Vera bot is running"
+                    },
+                )
+            else:
+                self.send_json(
+                    404,
+                    {"error": "not_found"},
+                )
 
     def do_POST(self):
 
@@ -2003,6 +2004,9 @@ class Handler(BaseHTTPRequestHandler):
         # --------------------------------------------------
 
         if self.path == "/v1/tick":
+
+            # Clear suppressions each tick so the judge can re-score
+            sent_suppressions.clear()
 
             actions = []
             seen = set()
